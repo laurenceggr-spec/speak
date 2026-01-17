@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Tutor - Référentiel FWB</title>
+    <style>
+        :root {
+            --primary: #2C3E50; --secondary: #3498DB; --accent: #E67E22;
+            --success: #27AE60; --light: #F4F7F6;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--light); margin: 0; display: flex; justify-content: center; height: 100vh; }
+        .app-container { width: 100%; max-width: 500px; background: white; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        
+        /* Header & Stats */
+        header { background: var(--primary); color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; }
+        .stats { display: flex; gap: 10px; font-weight: bold; }
+        
+        /* Niveau et Thèmes */
+        .settings-bar { padding: 10px; background: #eee; display: flex; gap: 10px; align-items: center; }
+        select { padding: 5px; border-radius: 5px; border: 1px solid #ccc; flex: 1; }
+        
+        .topics-grid { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; padding: 10px; 
+            background: #fff; border-bottom: 2px solid #ddd;
+        }
+        .topic-btn { 
+            font-size: 0.7rem; padding: 5px; border: 1px solid #ddd; border-radius: 5px; 
+            cursor: pointer; background: white; transition: 0.2s;
+        }
+        .topic-btn.active { background: var(--secondary); color: white; border-color: var(--secondary); }
+
+        /* Chat & Visual */
+        #visual-stage { height: 60px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; border-bottom: 1px solid #eee; }
+        #chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #fafafa; }
+        .message { max-width: 85%; padding: 10px 15px; border-radius: 18px; position: relative; line-height: 1.4; }
+        .user { align-self: flex-end; background: var(--secondary); color: white; }
+        .ai { align-self: flex-start; background: white; border: 1px solid #ddd; color: #333; }
+        .correction { border-left: 5px solid var(--accent); background: #FFF3E0; }
+        .keyword-highlight { color: #E67E22; font-weight: bold; text-decoration: underline; }
+        .replay-btn { border: none; background: none; cursor: pointer; font-size: 1rem; margin-left: 5px; }
+
+        /* Word Bank & Progress */
+        .progress-bar-container { height: 8px; background: #ddd; }
+        #progress-fill { height: 100%; width: 0%; background: var(--success); transition: 0.5s; }
+        #word-bank { padding: 10px; display: flex; flex-wrap: wrap; gap: 5px; border-top: 1px solid #eee; min-height: 30px; }
+        .word-tag { background: #E8F6F3; color: #16A085; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; cursor: pointer; }
+
+        /* Controls */
+        .controls { padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 10px; border-top: 1px solid #eee; }
+        #mic-btn { width: 60px; height: 60px; border-radius: 50%; border: none; background: #e74c3c; color: white; font-size: 1.5rem; cursor: pointer; }
+        #mic-btn.listening { background: var(--success); animation: pulse 1.5s infinite; }
+        .volume-container { width: 100px; height: 6px; background: #eee; border-radius: 3px; display: none; }
+        #volume-fill { height: 100%; background: var(--success); width: 0%; }
+        
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(39,174,96, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(39,174,96, 0); } }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <span onclick="toggleSettings()" style="cursor:pointer">⚙️</span>
+        <div class="stats">
+            <span>🔥 <span id="streak-val">0</span></span>
+            <span>⭐ <span id="score-val">0</span></span>
+        </div>
+    </header>
+
+    <div class="settings-bar">
+        <select id="level-select">
+            <option value="A1 (P3-P6)">P3-P6 (A1)</option>
+            <option value="A2.1 (S1-S2)">S1-S2 (A2.1)</option>
+            <option value="A2.2 (S3)">S3 (A2.2)</option>
+        </select>
+        <div style="font-size: 0.8rem; font-weight: bold;">LVL <span id="lvl-display">1</span></div>
+    </div>
+
+    <div class="progress-bar-container"><div id="progress-fill"></div></div>
+
+    <div class="topics-grid" id="topics-btns">
+        </div>
+
+    <div id="visual-stage">👋</div>
+
+    <div id="chat-box"></div>
+
+    <div id="word-bank"></div>
+
+    <div class="controls">
+        <div class="volume-container"><div id="volume-fill"></div></div>
+        <button id="mic-btn">🎤</button>
+        <div id="status">Clique pour parler</div>
+    </div>
+</div>
+
+<script>
+    // --- CONFIGURATION RÉFÉRENTIEL FWB ---
+    const FIELDS = [
+        { id: 'F1', name: 'Identité', emoji: '👤', words: ["name", "age", "family", "live", "brother", "sister"] },
+        { id: 'F2', name: 'Habitat', emoji: '🏠', words: ["house", "bedroom", "kitchen", "cat", "dog", "furniture"] },
+        { id: 'F4', name: 'Loisirs', emoji: '⚽', words: ["sport", "football", "music", "game", "internet", "hobby"] },
+        { id: 'F5', name: 'Voyages', emoji: '🚲', words: ["train", "plane", "bike", "holiday", "city", "beach"] },
+        { id: 'F7', name: 'Santé', emoji: '🍎', words: ["head", "body", "doctor", "happy", "sad", "tired"] },
+        { id: 'F9', name: 'Achats', emoji: '💰', words: ["price", "money", "shop", "buy", "expensive", "cheap"] },
+        { id: 'F10', name: 'Repas', emoji: '🍕', words: ["breakfast", "lunch", "dinner", "water", "apple", "bread"] },
+        { id: 'F12', name: 'Temps', emoji: '⏰', words: ["o'clock", "monday", "birthday", "summer", "winter", "weather"] }
+    ];
+
+    let currentTopic = FIELDS[0];
+    let score = parseInt(localStorage.getItem('fwb_score')) || 0;
+    let apiKey = localStorage.getItem('gemini_key') || "";
+    let learnedWords = new Set();
+
+    // --- INITIALISATION ---
+    const topicContainer = document.getElementById('topics-btns');
+    FIELDS.forEach(f => {
+        const btn = document.createElement('button');
+        btn.className = 'topic-btn';
+        btn.innerHTML = `${f.emoji}<br>${f.name}`;
+        btn.onclick = () => {
+            currentTopic = f;
+            document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            addMessage(`Let's talk about ${f.name}!`, 'ai');
+        };
+        topicContainer.appendChild(btn);
+    });
+
+    // --- LOGIQUE VOCALE & VOLUME ---
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'en-US';
+    let audioCtx, analyser;
+
+    document.getElementById('mic-btn').onclick = async () => {
+        if (!apiKey) return alert("Ajoute ta clé API Gemini dans les réglages !");
+        recognition.start();
+        startVolume();
+        document.getElementById('mic-btn').classList.add('listening');
+    };
+
+    async function startVolume() {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioCtx = new AudioContext();
+        analyser = audioCtx.createAnalyser();
+        const source = audioCtx.createMediaStreamSource(stream);
+        const processor = audioCtx.createScriptProcessor(2048, 1, 1);
+        source.connect(analyser); analyser.connect(processor); processor.connect(audioCtx.destination);
+        document.querySelector('.volume-container').style.display = 'block';
+        processor.onaudioprocess = () => {
+            const data = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(data);
+            const avg = data.reduce((a, b) => a + b) / data.length;
+            document.getElementById('volume-fill').style.width = (avg * 3) + "%";
+        };
+    }
+
+    recognition.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        addMessage(text, 'user');
+        callGemini(text);
+    };
+
+    recognition.onend = () => {
+        document.getElementById('mic-btn').classList.remove('listening');
+        document.querySelector('.volume-container').style.display = 'none';
+        if(audioCtx) audioCtx.close();
+    };
+
+    // --- INTELLIGENCE ARTIFICIELLE ---
+    async function callGemini(userText) {
+        const level = document.getElementById('level-select').value;
+        const prompt = `Act as an English Tutor for a Belgian child (Level ${level}). 
+        Topic: ${currentTopic.name}. Student said: "${userText}".
+        Rules: 
+        1. If error: "You said [error], but it's better to say [correction]". 
+        2. If correct: "Great English!". 
+        3. Always end with a simple question about ${currentTopic.name}. 
+        Keep it under 15 words. Use simple A1/A2 vocabulary.`;
+
+        try {
+            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            const data = await resp.json();
+            const reply = data.candidates[0].content.parts[0].text;
+            addMessage(reply, 'ai');
+            speak(reply);
+            updateStats(reply.includes("better to say") ? 5 : 20);
+        } catch (e) { addMessage("API Error. Check settings.", "ai"); }
+    }
+
+    // --- UI HELPERS ---
+    function addMessage(text, sender) {
+        const div = document.createElement('div');
+        div.className = `message ${sender}`;
+        if (sender === 'ai') {
+            let html = text;
+            currentTopic.words.forEach(w => {
+                const reg = new RegExp(`\\b(${w})\\b`, "gi");
+                if(reg.test(html)) {
+                    html = html.replace(reg, `<span class="keyword-highlight">$1</span>`);
+                    addToBank(w);
+                }
+            });
+            div.innerHTML = `<span>${html}</span><button class="replay-btn" onclick="speak('${text.replace(/'/g, "\\'")}')">🔊</button>`;
+            if(text.includes("better to say")) div.classList.add('correction');
+        } else { div.innerText = text; }
+        document.getElementById('chat-box').appendChild(div);
+        document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
+    }
+
+    function speak(text) {
+        const ut = new SpeechSynthesisUtterance(text);
+        ut.lang = 'en-US';
+        ut.rate = text.includes("better to say") ? 0.75 : 0.9;
+        window.speechSynthesis.speak(ut);
+    }
+
+    function addToBank(word) {
+        if(learnedWords.has(word)) return;
+        learnedWords.add(word);
+        const tag = document.createElement('span');
+        tag.className = 'word-tag';
+        tag.innerText = word;
+        tag.onclick = () => speak(word);
+        document.getElementById('word-bank').appendChild(tag);
+    }
+
+    function updateStats(pts) {
+        score += pts;
+        localStorage.setItem('fwb_score', score);
+        document.getElementById('score-val').innerText = score;
+        const progress = score % 100;
+        document.getElementById('progress-fill').style.width = progress + "%";
+        document.getElementById('lvl-display').innerText = Math.floor(score / 100) + 1;
+        document.getElementById('visual-stage').innerText = "⭐";
+        setTimeout(() => document.getElementById('visual-stage').innerText = currentTopic.emoji, 1000);
+    }
+
+    function toggleSettings() {
+        const key = prompt("Entrez votre clé API Gemini :", apiKey);
+        if(key) { apiKey = key; localStorage.setItem('gemini_key', key); }
+    }
+
+    // Streak logic simplifiée
+    const streak = JSON.parse(localStorage.getItem('fwb_streak')) || {count:0, last:0};
+    const today = new Date().toDateString();
+    if(streak.last !== today) {
+        streak.count = (new Date(streak.last).getTime() > Date.now() - 172800000) ? streak.count + 1 : 1;
+        streak.last = today;
+        localStorage.setItem('fwb_streak', JSON.stringify(streak));
+    }
+    document.getElementById('streak-val').innerText = streak.count;
+</script>
+</body>
+</html>

@@ -186,4 +186,52 @@
         
         // Détection de mots clés pour la Word Bank
         let highlightedText = text;
-        current
+        currentTopic.words.forEach(word => {
+            const regex = new RegExp(`\\b${word}\\b`, 'gi');
+            if (regex.test(text) && type === 'ai') {
+                highlightedText = highlightedText.replace(regex, `<b>${word}</b>`);
+                addWordToBank(word);
+            }
+        });
+
+        div.innerHTML = highlightedText;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function addWordToBank(word) {
+        const bank = document.getElementById('word-bank');
+        if ([...bank.children].some(tag => tag.innerText === word)) return;
+        const span = document.createElement('span');
+        span.className = 'word-tag';
+        span.innerText = word;
+        span.onclick = () => speak(word);
+        bank.appendChild(span);
+    }
+
+    function speak(text) {
+        const synth = window.speechSynthesis;
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'en-US';
+        utter.rate = 0.9;
+        synth.speak(utter);
+    }
+
+    function updateScore(pts) {
+        score += pts;
+        localStorage.setItem('fwb_score', score);
+        document.getElementById('score-val').innerText = score;
+    }
+
+    function toggleSettings() {
+        const key = prompt("Entre ta clé API Gemini (Google AI Studio) :", apiKey);
+        if (key !== null) {
+            apiKey = key;
+            localStorage.setItem('gemini_key', key);
+            location.reload(); // Recharge pour appliquer
+        }
+    }
+</script>
+
+</body>
+</html>

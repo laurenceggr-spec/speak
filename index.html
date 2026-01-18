@@ -139,16 +139,20 @@
         document.getElementById('mic-btn').classList.add('listening');
     };
 
-   async function callGemini(userText) {
+async function callGemini(userText) {
     const level = document.getElementById('level-select').value;
     
-    // CHANGEMENT ICI : Utilisation de la version v1 (stable) et du modèle 1.5-pro
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
+    // On utilise l'URL la plus simple et stable possible
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
     const payload = {
         contents: [{
-            parts: [{ text: `Act as an English Tutor for a child. Level: ${level}. Topic: ${currentTopic.name}. Student says: "${userText}". Keep it very short, correct errors and ask a question.` }]
-        }]
+            parts: [{ text: `CONTEXT: English Tutor (FWB Framework). LEVEL: ${level}. TOPIC: ${currentTopic.name}. STUDENT SAYS: "${userText}". TASK: Respond in 1 sentence, correct errors if any, ask a simple question.` }]
+        }],
+        generationConfig: {
+            maxOutputTokens: 50,
+            temperature: 0.7
+        }
     };
 
     try {
@@ -160,27 +164,21 @@
         
         const data = await resp.json();
         
-        // Si gemini-1.5-pro ne fonctionne pas, on tente le gemini-pro classique
+        // Si l'erreur persiste, c'est que la clé est mal lue
         if (data.error) {
-            console.log("Essai du modèle de secours...");
-            const backupUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
-            const backupResp = await fetch(backupUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const backupData = await backupResp.json();
-            
-            if (backupData.error) {
-                addMessage("Erreur : " + backupData.error.message, "ai");
-            } else {
-                handleResponse(backupData);
-            }
-        } else {
-            handleResponse(data);
+            console.error("Détail erreur:", data.error);
+            addMessage("⚠️ Erreur : " + data.error.message, "ai");
+            return;
+        }
+
+        if (data.candidates && data.candidates[0].content) {
+            const reply = data.candidates[0].content.parts[0].text;
+            addMessage(reply, 'ai');
+            speak(reply);
+            updateStats(20);
         }
     } catch (e) { 
-        addMessage("Problème de connexion internet.", "ai"); 
+        addMessage("Connection failed. Check your internet or API key.", "ai"); 
     }
 }
 

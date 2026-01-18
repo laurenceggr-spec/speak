@@ -124,8 +124,7 @@
     async function callAI(userText) {
         const l = document.getElementById('lvl').value;
         // URL STABLE V1
-        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`;
-
+    const url = https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${key};
         const prompt = {
             contents: [{
                 parts: [{ text: `Act as a friendly English Tutor for a student (Level ${l}). Topic: ${topic}. Student said: "${userText}". Respond in 1 short sentence, correct errors gently, and ask 1 question.` }]

@@ -3,235 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tuteur Anglais - Tronc Commun FWB</title>
+    <title>Tuteur Anglais FWB</title>
     <style>
-        :root {
-            --primary: #2C3E50; --secondary: #3498DB; --accent: #E67E22;
-            --success: #27AE60; --light: #F4F7F6; --error: #E74C3C;
-        }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--light); margin: 0; display: flex; justify-content: center; height: 100vh; }
-        .app-container { width: 100%; max-width: 500px; background: white; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
-        
-        header { background: var(--primary); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .settings-bar { padding: 10px; background: #eee; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #ddd; }
-        select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; flex: 1; font-size: 0.9rem; }
-        
-        .topics-grid { 
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; padding: 10px; 
-            background: #fff; border-bottom: 2px solid #ddd;
-        }
-        .topic-btn { 
-            font-size: 0.7rem; padding: 8px 4px; border: 1px solid #ddd; border-radius: 5px; 
-            cursor: pointer; background: white; transition: 0.2s; text-align: center;
-        }
-        .topic-btn.active { background: var(--secondary); color: white; border-color: var(--secondary); }
-
-        #visual-stage { height: 80px; display: flex; align-items: center; justify-content: center; font-size: 3rem; border-bottom: 1px solid #eee; background: #fff; }
-        #chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #fafafa; }
-        
-        .message { max-width: 85%; padding: 12px 16px; border-radius: 18px; line-height: 1.4; position: relative; font-size: 1rem; }
-        .user { align-self: flex-end; background: var(--secondary); color: white; border-bottom-right-radius: 2px; }
-        .ai { align-self: flex-start; background: white; border: 1px solid #ddd; color: #333; border-bottom-left-radius: 2px; }
-        .error-msg { background: #FDEDEC; color: var(--error); border: 1px solid var(--error); align-self: center; font-size: 0.8rem; }
-        
-        .word-bank { padding: 10px; display: flex; flex-wrap: wrap; gap: 5px; border-top: 1px solid #eee; background: white; min-height: 40px; }
-        .word-tag { background: #E8F6F3; color: #16A085; padding: 4px 10px; border-radius: 15px; font-size: 0.85rem; cursor: pointer; border: 1px solid #D1F2EB; }
-
-        .controls { padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; border-top: 1px solid #eee; background: white; }
-        #mic-btn { width: 70px; height: 70px; border-radius: 50%; border: none; background: var(--error); color: white; font-size: 1.8rem; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        #mic-btn.listening { background: var(--success); transform: scale(1.1); animation: pulse 1.5s infinite; }
-        
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(39,174,96, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(39,174,96, 0); } }
+        :root { --p: #2C3E50; --s: #3498DB; --a: #E67E22; --bg: #F4F7F6; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; height: 100vh; }
+        .app { width: 100%; max-width: 500px; background: white; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        header { background: var(--p); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .settings { padding: 10px; background: #eee; display: flex; gap: 10px; }
+        .topics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; padding: 10px; border-bottom: 2px solid #ddd; }
+        .t-btn { font-size: 0.7rem; padding: 8px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; background: white; }
+        .t-btn.active { background: var(--s); color: white; }
+        #chat { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 80%; padding: 10px; border-radius: 15px; line-height: 1.4; }
+        .user { align-self: flex-end; background: var(--s); color: white; }
+        .ai { align-self: flex-start; background: #f0f0f0; border: 1px solid #ddd; }
+        .err { background: #fee; color: red; align-self: center; font-size: 0.8rem; }
+        .controls { padding: 20px; text-align: center; border-top: 1px solid #eee; }
+        #mic { width: 60px; height: 60px; border-radius: 50%; border: none; background: #e74c3c; color: white; font-size: 1.5rem; cursor: pointer; }
+        #mic.active { background: #27ae60; animation: p 1s infinite; }
+        @keyframes p { 0% { box-shadow: 0 0 0 0 rgba(39,174,96,0.5); } 70% { box-shadow: 0 0 0 10px rgba(39,174,96,0); } }
     </style>
 </head>
 <body>
 
-<div class="app-container">
+<div class="app">
     <header>
-        <span onclick="toggleSettings()" style="cursor:pointer; font-size: 1.5rem;">⚙️</span>
-        <div style="font-weight: bold; font-size: 1.2rem;">My English Tutor 🇧🇪</div>
-        <div id="score-display">⭐ <span id="score-val">0</span></div>
+        <button onclick="askKey()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">⚙️</button>
+        <b>English Tutor 🇧🇪</b>
+        <span>⭐ <span id="sc">0</span></span>
     </header>
 
-    <div class="settings-bar">
-        <label for="level-select">🎯</label>
-        <select id="level-select">
-            <option value="A1 (P3-P6)">Niveau P3-P6 (A1)</option>
-            <option value="A2.1 (S1-S2)">Niveau S1-S2 (A2.1)</option>
-            <option value="A2.2 (S3)">Niveau S3 (A2.2)</option>
+    <div class="settings">
+        <select id="lvl">
+            <option value="A1">Primaire (A1)</option>
+            <option value="A2.1">S1-S2 (A2.1)</option>
+            <option value="A2.2">S3 (A2.2)</option>
         </select>
     </div>
 
-    <div class="topics-grid" id="topics-btns"></div>
-
-    <div id="visual-stage">👋</div>
-
-    <div id="chat-box">
-        <div class="message ai">Hi! I'm your tutor. Click the gear (⚙️) to add your API Key, then click the mic to talk!</div>
+    <div class="topics" id="t-grid"></div>
+    <div id="chat">
+        <div class="msg ai">Hello! Clique sur ⚙️ pour ajouter ta clé, puis sur le micro.</div>
     </div>
 
-    <div class="word-bank" id="word-bank"></div>
-
     <div class="controls">
-        <button id="mic-btn">🎤</button>
-        <div id="status" style="color: #666; font-size: 0.9rem;">Clique pour parler</div>
+        <button id="mic">🎤</button>
+        <p id="st">Clique pour parler</p>
     </div>
 </div>
 
 <script>
-    // --- CONFIGURATION RÉFÉRENTIEL ---
     const FIELDS = [
-        { name: 'Identity', emoji: '👤', words: ["name", "age", "family", "live", "years old"] },
-        { name: 'House', emoji: '🏠', words: ["house", "bedroom", "kitchen", "garden", "pet"] },
-        { name: 'Hobbies', emoji: '⚽', words: ["sport", "music", "video games", "hobby", "play"] },
-        { name: 'Travel', emoji: '🚲', words: ["train", "plane", "holiday", "beach", "city"] },
-        { name: 'Health', emoji: '🍎', words: ["head", "body", "happy", "tired", "doctor"] },
-        { name: 'Shopping', emoji: '💰', words: ["price", "money", "shop", "buy", "cost"] },
-        { name: 'Food', emoji: '🍕', words: ["breakfast", "lunch", "dinner", "apple", "water"] },
-        { name: 'Time', emoji: '⏰', words: ["o'clock", "monday", "birthday", "summer", "weather"] }
+        { n: 'Moi', e: '👤' }, { n: 'Maison', e: '🏠' }, { n: 'Hobbies', e: '⚽' }, 
+        { n: 'Voyage', e: '🚲' }, { n: 'Santé', e: '🍎' }, { n: 'Food', e: '🍕' }
     ];
+    
+    let key = localStorage.getItem('g_key') || "";
+    let topic = "Moi";
+    let score = 0;
 
-    let currentTopic = FIELDS[0];
-    let apiKey = localStorage.getItem('gemini_key') || "";
-    let score = parseInt(localStorage.getItem('fwb_score')) || 0;
-    document.getElementById('score-val').innerText = score;
-
-    // --- INITIALISATION UI ---
-    const topicContainer = document.getElementById('topics-btns');
-    FIELDS.forEach((f, index) => {
-        const btn = document.createElement('button');
-        btn.className = `topic-btn ${index === 0 ? 'active' : ''}`;
-        btn.innerHTML = `${f.emoji}<br>${f.name}`;
-        btn.onclick = () => {
-            currentTopic = f;
-            document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById('visual-stage').innerText = f.emoji;
-            addMessage(`Switched to topic: ${f.name}.`, 'ai');
+    // Création des boutons de thèmes
+    const grid = document.getElementById('t-grid');
+    FIELDS.forEach(f => {
+        const b = document.createElement('button');
+        b.className = 't-btn';
+        b.innerHTML = f.e + "<br>" + f.n;
+        b.onclick = () => {
+            topic = f.n;
+            document.querySelectorAll('.t-btn').forEach(x => x.classList.remove('active'));
+            b.classList.add('active');
         };
-        topicContainer.appendChild(btn);
+        grid.appendChild(b);
     });
 
-    // --- RECONNAISSANCE VOCALE ---
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = 'en-US';
-    recognition.interimResults = false;
-
-    document.getElementById('mic-btn').onclick = () => {
-        if (!apiKey) {
-            alert("⚠️ Clique sur la roue dentée (⚙️) pour entrer ta clé API !");
-            return;
+    // Fonction pour l'engrenage (doit être accessible globalement)
+    window.askKey = function() {
+        const input = prompt("Colle ta clé API Gemini ici :", key);
+        if (input) {
+            key = input.trim();
+            localStorage.setItem('g_key', key);
+            alert("Clé enregistrée !");
         }
-        recognition.start();
-        document.getElementById('mic-btn').classList.add('listening');
-        document.getElementById('status').innerText = "Je t'écoute...";
     };
 
-    recognition.onresult = (e) => {
-        const text = e.results[0][0].transcript;
-        addMessage(text, 'user');
-        callGemini(text);
+    // Micro
+    const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    rec.lang = 'en-US';
+
+    document.getElementById('mic').onclick = () => {
+        if(!key) return askKey();
+        rec.start();
+        document.getElementById('mic').classList.add('active');
     };
 
-    recognition.onend = () => {
-        document.getElementById('mic-btn').classList.remove('listening');
-        document.getElementById('status').innerText = "Clique pour parler";
+    rec.onresult = (e) => {
+        const txt = e.results[0][0].transcript;
+        addMsg(txt, 'user');
+        callAI(txt);
     };
 
-    // --- APPEL API GEMINI ---
-    async function callGemini(userText) {
-        const level = document.getElementById('level-select').value;
-        // Utilisation de la version v1beta qui est la plus robuste pour Flash
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    rec.onend = () => document.getElementById('mic').classList.remove('active');
 
-        const prompt = `Act as a friendly English Tutor for a student (Level: ${level}). 
-        Current Topic: ${currentTopic.name}. 
-        Student said: "${userText}". 
-        INSTRUCTIONS: 
-        1. If there's an error, say "You said... but it's better to say...".
-        2. If correct, say "Well done!". 
-        3. Always ask one short question about ${currentTopic.name} to continue.
-        4. Use very simple English. Maximum 20 words.`;
+    async function callAI(txt) {
+        const l = document.getElementById('lvl').value;
+        // URL TESTÉE ET MISE À JOUR
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+        
+        const prompt = `Tutor for a kid. Level ${l}. Topic ${topic}. Student said: "${txt}". Short answer, 1 correction, 1 question.`;
 
         try {
-            const response = await fetch(url, {
+            const r = await fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }]
-                })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
-
-            const data = await response.json();
-
-            if (data.error) {
-                addMessage(`API ERROR: ${data.error.message}`, 'error-msg');
-                return;
+            const d = await r.json();
+            if(d.error) {
+                addMsg("Erreur: " + d.error.message, 'err');
+            } else {
+                const rep = d.candidates[0].content.parts[0].text;
+                addMsg(rep, 'ai');
+                const u = new SpeechSynthesisUtterance(rep);
+                u.lang = 'en-US';
+                window.speechSynthesis.speak(u);
             }
-
-            const aiReply = data.candidates[0].content.parts[0].text;
-            addMessage(aiReply, 'ai');
-            speak(aiReply);
-            updateScore(10);
-        } catch (err) {
-            addMessage("Connection error. Try again.", "error-msg");
-        }
+        } catch(e) { addMsg("Erreur de connexion", 'err'); }
     }
 
-    // --- FONCTIONS AUXILIAIRES ---
-    function addMessage(text, type) {
-        const chatBox = document.getElementById('chat-box');
-        const div = document.createElement('div');
-        div.className = `message ${type}`;
-        
-        // Détection de mots clés pour la Word Bank
-        let highlightedText = text;
-        currentTopic.words.forEach(word => {
-            const regex = new RegExp(`\\b${word}\\b`, 'gi');
-            if (regex.test(text) && type === 'ai') {
-                highlightedText = highlightedText.replace(regex, `<b>${word}</b>`);
-                addWordToBank(word);
-            }
-        });
-
-        div.innerHTML = highlightedText;
-        chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function addWordToBank(word) {
-        const bank = document.getElementById('word-bank');
-        if ([...bank.children].some(tag => tag.innerText === word)) return;
-        const span = document.createElement('span');
-        span.className = 'word-tag';
-        span.innerText = word;
-        span.onclick = () => speak(word);
-        bank.appendChild(span);
-    }
-
-    function speak(text) {
-        const synth = window.speechSynthesis;
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = 'en-US';
-        utter.rate = 0.9;
-        synth.speak(utter);
-    }
-
-    function updateScore(pts) {
-        score += pts;
-        localStorage.setItem('fwb_score', score);
-        document.getElementById('score-val').innerText = score;
-    }
-
-    function toggleSettings() {
-        const key = prompt("Entre ta clé API Gemini (Google AI Studio) :", apiKey);
-        if (key !== null) {
-            apiKey = key;
-            localStorage.setItem('gemini_key', key);
-            location.reload(); // Recharge pour appliquer
-        }
+    function addMsg(t, cl) {
+        const d = document.createElement('div');
+        d.className = `msg ${cl}`;
+        d.innerText = t;
+        document.getElementById('chat').appendChild(d);
+        document.getElementById('chat').scrollTop = 9999;
     }
 </script>
-
 </body>
 </html>

@@ -139,21 +139,61 @@
         document.getElementById('mic-btn').classList.add('listening');
     };
 
-    async function startVolume() {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioCtx = new AudioContext();
-        analyser = audioCtx.createAnalyser();
-        const source = audioCtx.createMediaStreamSource(stream);
-        const processor = audioCtx.createScriptProcessor(2048, 1, 1);
-        source.connect(analyser); analyser.connect(processor); processor.connect(audioCtx.destination);
-        document.querySelector('.volume-container').style.display = 'block';
-        processor.onaudioprocess = () => {
-            const data = new Uint8Array(analyser.frequencyBinCount);
-            analyser.getByteFrequencyData(data);
-            const avg = data.reduce((a, b) => a + b) / data.length;
-            document.getElementById('volume-fill').style.width = (avg * 3) + "%";
-        };
+   async function callGemini(userText) {
+    const level = document.getElementById('level-select').value;
+    
+    // CHANGEMENT ICI : Utilisation de la version v1 (stable) et du modèle 1.5-pro
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
+
+    const payload = {
+        contents: [{
+            parts: [{ text: `Act as an English Tutor for a child. Level: ${level}. Topic: ${currentTopic.name}. Student says: "${userText}". Keep it very short, correct errors and ask a question.` }]
+        }]
+    };
+
+    try {
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await resp.json();
+        
+        // Si gemini-1.5-pro ne fonctionne pas, on tente le gemini-pro classique
+        if (data.error) {
+            console.log("Essai du modèle de secours...");
+            const backupUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
+            const backupResp = await fetch(backupUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const backupData = await backupResp.json();
+            
+            if (backupData.error) {
+                addMessage("Erreur : " + backupData.error.message, "ai");
+            } else {
+                handleResponse(backupData);
+            }
+        } else {
+            handleResponse(data);
+        }
+    } catch (e) { 
+        addMessage("Problème de connexion internet.", "ai"); 
     }
+}
+
+function handleResponse(data) {
+    if (data.candidates && data.candidates[0].content) {
+        const reply = data.candidates[0].content.parts[0].text;
+        addMessage(reply, 'ai');
+        speak(reply);
+        updateStats(20);
+    } else {
+        addMessage("L'IA n'a pas pu répondre. Vérifie ta clé API.", "ai");
+    }
+}
 
     recognition.onresult = (e) => {
         const text = e.results[0][0].transcript;

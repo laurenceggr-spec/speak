@@ -104,10 +104,10 @@
 
     rec.onend = () => document.getElementById('mic').classList.remove('active');
 
-    async function callAI(txt) {
+ async function callAI(txt) {
         const l = document.getElementById('lvl').value;
-        // Modèle changé en gemini-pro pour compatibilité totale
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${key}`;
+        // CHANGEMENT : Passage en version "v1" (stable) au lieu de "v1beta"
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`;
         
         const prompt = `Act as an English Tutor for a student (Level ${l}). Topic: ${topic}. Student said: "${txt}". Answer in 1 short sentence, correct errors if any, and ask 1 question. Use very simple English.`;
 
@@ -122,7 +122,7 @@
             const d = await r.json();
             
             if(d.error) {
-                // Si même gemini-pro ne passe pas, on affiche l'erreur détaillée
+                // Si une erreur revient, on l'affiche clairement
                 addMsg("Erreur API : " + d.error.message, 'err');
             } else if (d.candidates && d.candidates[0].content) {
                 const rep = d.candidates[0].content.parts[0].text;

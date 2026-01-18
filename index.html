@@ -170,26 +170,25 @@
     // --- INTELLIGENCE ARTIFICIELLE ---
     async function callGemini(userText) {
     const level = document.getElementById('level-select').value;
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // Mise à jour de l'URL vers la version stable "v1" et le modèle "gemini-pro"
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
 
     const payload = {
         contents: [{
-            parts: [{ text: `Act as a tutor. Level: ${level}. Topic: ${currentTopic.name}. Student said: ${userText}. Point out errors gently and ask a question.` }]
+            parts: [{ text: `Act as an English Tutor for a Belgian child (Level ${level}). Topic: ${currentTopic.name}. Student said: "${userText}". Correct errors gently and ask a question.` }]
         }]
     };
 
     try {
-        const response = await fetch(url, {
+        const resp = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-
-        const data = await response.json();
+        const data = await resp.json();
         
         if (data.error) {
-            console.error("Erreur API détaillée:", data.error.message);
-            addMessage("Erreur : " + data.error.message, "ai");
+            addMessage("Erreur API : " + data.error.message, "ai");
             return;
         }
 
@@ -197,9 +196,8 @@
         addMessage(reply, 'ai');
         speak(reply);
         updateStats(20);
-    } catch (e) {
-        console.error("Erreur de connexion:", e);
-        addMessage("Connexion impossible à l'IA.", "ai");
+    } catch (e) { 
+        addMessage("Connexion impossible. Réessaie.", "ai"); 
     }
 }
 

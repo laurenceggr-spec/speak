@@ -143,8 +143,7 @@ async function callGemini(userText) {
     const level = document.getElementById('level-select').value;
     
     // On utilise l'URL la plus simple et stable possible
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
-
+    const url = https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${apiKey};
     const payload = {
         contents: [{
             parts: [{ text: `CONTEXT: English Tutor (FWB Framework). LEVEL: ${level}. TOPIC: ${currentTopic.name}. STUDENT SAYS: "${userText}". TASK: Respond in 1 sentence, correct errors if any, ask a simple question.` }]

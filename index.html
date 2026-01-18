@@ -104,38 +104,46 @@
 
     rec.onend = () => document.getElementById('mic').classList.remove('active');
 
- async function callAI(txt) {
+async function callAI(txt) {
         const l = document.getElementById('lvl').value;
-        // CHANGEMENT : Passage en version "v1" (stable) au lieu de "v1beta"
-        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`;
         
-        const prompt = `Act as an English Tutor for a student (Level ${l}). Topic: ${topic}. Student said: "${txt}". Answer in 1 short sentence, correct errors if any, and ask 1 question. Use very simple English.`;
+        // Liste des adresses à tester par ordre de probabilité
+        const urls = [
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`,
+            `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${key}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${key}`
+        ];
 
-        try {
-            const r = await fetch(url, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ 
-                    contents: [{ parts: [{ text: prompt }] }] 
-                })
-            });
-            const d = await r.json();
-            
-            if(d.error) {
-                // Si une erreur revient, on l'affiche clairement
-                addMsg("Erreur API : " + d.error.message, 'err');
-            } else if (d.candidates && d.candidates[0].content) {
-                const rep = d.candidates[0].content.parts[0].text;
-                addMsg(rep, 'ai');
-                const u = new SpeechSynthesisUtterance(rep);
-                u.lang = 'en-US';
-                window.speechSynthesis.speak(u);
+        const prompt = `Act as an English Tutor. Level ${l}. Topic ${topic}. Student said: "${txt}". Short answer + 1 question.`;
+
+        for (let url of urls) {
+            try {
+                const r = await fetch(url, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const d = await r.json();
+
+                // Si cette URL fonctionne (pas d'erreur), on traite la réponse et on arrête la boucle
+                if (!d.error && d.candidates) {
+                    const rep = d.candidates[0].content.parts[0].text;
+                    addMsg(rep, 'ai');
+                    const u = new SpeechSynthesisUtterance(rep);
+                    u.lang = 'en-US';
+                    window.speechSynthesis.speak(u);
+                    return; // Succès ! On sort de la fonction.
+                } else {
+                    console.log("Essai suivant, car l'URL a échoué : " + url);
+                }
+            } catch(e) {
+                console.log("Erreur de connexion sur cette URL");
             }
-        } catch(e) { 
-            addMsg("Erreur de connexion : " + e.message, 'err'); 
         }
-    }
 
+        // Si on arrive ici, c'est que les 3 ont échoué
+        addMsg("Désolé, ton compte Google API ne reconnaît aucun modèle. Vérifie si tu as bien créé une clé 'Gemini API' sur Google AI Studio.", 'err');
+    }
     function addMsg(t, cl) {
         const d = document.createElement('div');
         d.className = `msg ${cl}`;

@@ -107,7 +107,7 @@
     async function callAI(txt) {
         const l = document.getElementById('lvl').value;
         // URL TESTÉE ET MISE À JOUR
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${key}`;
         
         const prompt = `Tutor for a kid. Level ${l}. Topic ${topic}. Student said: "${txt}". Short answer, 1 correction, 1 question.`;
 
